@@ -1,0 +1,18 @@
+# python
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# build
+*.exe
+*.rar
+
+# temp
+tmp/
+temp/
+*.tmp
+*.bak
+
+# output
+output/
