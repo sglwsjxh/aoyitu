@@ -72,7 +72,7 @@ aoyitu/
 ├── public/              # 静态资源（随项目分发）
 │   ├── 方正艺黑_GBK.ttf # 中文字幕字体
 │   └── Sprite/          # 渐变 / 噪点 / 仙线 / 字幕背景条
-├── xian_positions.json  # 仙线逐帧摆放数据
+├── position.json        # 仙线逐帧摆放数据
 ├── pyproject.toml       # uv 项目定义
 └── output/              # GUI 导出目录（自动创建）
 ```
@@ -88,7 +88,7 @@ aoyitu/
 | `xian*.png`（7 张） | 仙线特效精灵（`_h` 为横向变体） |
 | `zuozhu_000_bg.png` | 字幕背景条 |
 
-### `xian_positions.json`
+### `position.json`
 
 仙线特效的**逐帧摆放表**：顶层键是帧号（`"0"`~`"85"`），每帧下列出要渲染的仙线精灵及实例列表。每个实例是最少 2 个元素的数组：
 

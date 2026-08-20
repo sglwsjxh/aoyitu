@@ -281,7 +281,7 @@ class AoyituRenderer:
                 self._xian_sprites[name] = None
 
     def _load_xian(self):
-        path = os.path.join(SCRIPT_DIR, 'xian_positions.json')
+        path = os.path.join(SCRIPT_DIR, 'position.json')
         try:
             with open(path) as f:
                 self._xian_data = json.load(f)
@@ -444,7 +444,7 @@ class AoyituRenderer:
         scene[:, :self.grad_w] *= (1 - grad_alpha_l)
         scene[:, W - self.grad_w:] *= (1 - grad_alpha_r)
 
-        # --- 仙线特效（按 xian_positions.json 逐帧摆放） ---
+        # --- 仙线特效（按 position.json 逐帧摆放） ---
         frame_key = str(frame)
         if frame_key in self._xian_data:
             for name in ('xian4_h.png', 'xian3_h.png', 'xian4.png', 'xian3.png',

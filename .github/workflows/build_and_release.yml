@@ -1,0 +1,53 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: pip install pyinstaller numpy pillow opencv-python
+
+      - name: Build single-file exe
+        run: |
+          pyinstaller --onefile --noconsole --clean --name aoyitu `
+            --exclude-module numpy.testing `
+            --exclude-module setuptools `
+            aoyitu_gui.py
+
+      - name: Package release
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path release -Force | Out-Null
+          Copy-Item dist/aoyitu.exe release/
+          Copy-Item README.md release/
+          Copy-Item LICENSE release/
+          Copy-Item public release/ -Recurse
+
+      - name: Create zip
+        shell: pwsh
+        run: |
+          Compress-Archive -Path release/* -DestinationPath aoyitu-${{ github.ref_name }}.zip
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: aoyitu-${{ github.ref_name }}.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: false
