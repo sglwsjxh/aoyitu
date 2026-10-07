@@ -19,6 +19,7 @@
 import json
 import math
 import os
+import re
 import subprocess
 import sys
 import threading
@@ -492,6 +493,24 @@ class AoyituGUI:
             self.frames_cache[fi] = self.renderer.render(fi)
         return self.frames_cache.get(fi)
 
+    def _get_all_frames(self):
+        '''返回全部 86 帧，优先复用已渲染缓存，缺失的现场渲染。'''
+        if self.renderer and len(self.frames_cache) >= self.total_frames:
+            return [self.frames_cache[i] for i in range(self.total_frames)]
+        return [self.renderer.render(i) for i in range(self.total_frames)]
+
+    def _next_output_path(self, ext):
+        '''生成输出路径：{中文内容}{三位编号}.{ext}，编号按相同中文内容从 001 计数。'''
+        base = (self._chinese_text or 'aoyitu').strip()
+        base = re.sub(r'[\\/:*?"<>|]', '_', base) or 'aoyitu'
+        max_num = 0
+        if os.path.isdir(OUTPUT_DIR):
+            for fn in os.listdir(OUTPUT_DIR):
+                m = re.match(rf'^{re.escape(base)}(\d{{3}})\.', fn)
+                if m:
+                    max_num = max(max_num, int(m.group(1)))
+        return os.path.join(OUTPUT_DIR, f'{base}{max_num + 1:03d}.{ext}')
+
     def _show_frame(self):
         if not self.renderer:
             return None
@@ -545,8 +564,8 @@ class AoyituGUI:
         def run():
             cfg = self._get_cfg()
             fps = int(cfg.get('fps', 30))
-            path = os.path.join(OUTPUT_DIR, 'aoyitu_output.gif')
-            frames = [self.renderer.render(i) for i in range(self.total_frames)]
+            path = self._next_output_path('gif')
+            frames = self._get_all_frames()
             out_frames = []
             for f in frames:
                 if f.mode != 'P':
@@ -555,7 +574,7 @@ class AoyituGUI:
                 out_frames.append(f)
             out_frames[0].save(path, save_all=True, append_images=out_frames[1:],
                                duration=1000 // fps, loop=0, optimize=True)
-            self._status.config(text='完成: aoyitu_output.gif', fg='#0a0')
+            self._status.config(text=f'完成: {os.path.basename(path)}', fg='#0a0')
 
         def run_inner():
             try:
@@ -591,10 +610,8 @@ class AoyituGUI:
             import shutil
             cfg = self._get_cfg()
             fps = int(cfg.get('fps', 30))
-            ts = time.strftime('%H%M%S')
-            fname = f'aoyitu_output_{ts}.mp4'
-            path = os.path.join(OUTPUT_DIR, fname)
-            frames = [self.renderer.render(i) for i in range(self.total_frames)]
+            path = self._next_output_path('mp4')
+            frames = self._get_all_frames()
             h = frames[0].height
             w = frames[0].width
 
@@ -635,22 +652,19 @@ class AoyituGUI:
             cmd = [ffmpeg, '-y', '-f', 'rawvideo', '-vcodec', 'rawvideo',
                    '-s', f'{w}x{h}', '-pix_fmt', 'rgb24', '-r', str(fps),
                    '-i', '-']
-            inputs = []
             filter_strs = []
             for idx, ap in enumerate(audio_paths):
-                inputs.extend(['-i', ap])
+                cmd.extend(['-i', ap])
                 filter_strs.append(f'[0:v][{idx + 1}:a]concat=n=1:v=1:a=1[v{idx}a{idx}]')
             if audio_paths:
                 filter_str = ''.join(filter_strs)
                 out_idx = len(audio_paths)
                 filter_str += f'[v{out_idx-1}a{out_idx-1}]concat=n=1:v=1:a=1[outv][outa]'
                 cmd.extend(['-filter_complex', filter_str, '-map', '[outv]', '-map', '[outa]'])
-            else:
-                cmd.extend(['-filter_complex', f'apad=whole_dur={video_dur:.3f}s', '-map', '0:v'])
+                cmd.extend(['-c:a', 'aac', '-shortest'])
             cmd.extend(['-c:v', 'libx264', '-crf', '18', '-preset', 'fast',
                         '-pix_fmt', 'yuv420p', '-movflags', '+faststart'])
-            if audio_paths:
-                cmd.extend(['-c:a', 'aac', '-shortest'])
+            cmd.append(path)
 
             proc = sp.Popen(cmd, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
             for f in frames:
@@ -665,7 +679,7 @@ class AoyituGUI:
                 proc.kill()
                 self._status.config(text='编码超时(5分钟)', fg='#c00')
                 return
-            self._status.config(text=f'完成: {fname}', fg='#0a0')
+            self._status.config(text=f'完成: {os.path.basename(path)}', fg='#0a0')
 
         def run_inner():
             try:
