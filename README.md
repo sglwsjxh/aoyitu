@@ -24,7 +24,7 @@
 uv sync
 
 # 启动 GUI
-.\.venv\Scripts\python.exe aoyitu_gui.py
+uv run python aoyitu_gui.py
 ```
 
 GUI 里：选择清晰角色图 → 勾选"字幕图"或输入中文字幕 → 点「加载素材」→ 调整右侧参数 → 「生成GIF / 生成MP4」。勾选「导入音频」可混入 MP3/WAV（支持多段），生成 MP4 时自动合成。
@@ -35,10 +35,10 @@ GUI 里：选择清晰角色图 → 勾选"字幕图"或输入中文字幕 → �
 
 ```bash
 # 基础用法：角色图 + 中文字幕
-.\.venv\Scripts\python.exe aoyitu.py -c 角色.png --chinese-text "忍法·千鸟" --sub-bg public\Sprite\zuozhu_000_bg.png -o out.gif
+uv run python aoyitu.py -c 角色.png --chinese-text "忍法·千鸟" --sub-bg public\Sprite\zuozhu_000_bg.png -o out.gif
 
 # 带模糊图 + 字幕图 + 自定义参数
-.\.venv\Scripts\python.exe aoyitu.py -c 角色.png -b 模糊.png -s 字幕.png --sub-bg public\Sprite\zuozhu_000_bg.png --fps 30 --format video -o out.mp4
+uv run python aoyitu.py -c 角色.png -b 模糊.png -s 字幕.png --sub-bg public\Sprite\zuozhu_000_bg.png --fps 30 --format video -o out.mp4
 ```
 
 | 参数 | 说明 | 默认 |
