@@ -14,7 +14,7 @@
 ## 系统要求
 
 - Windows 10/11（GUI 基于 Tkinter）
-- Python 3.13+
+- Python 3.11+
 - ffmpeg（可选）：加入系统 PATH 后 MP4 用 H.264 编码；未安装时自动回退 mp4v
 
 ## 快速开始
