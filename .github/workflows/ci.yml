@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system libraries for OpenCV
+        run: |
+          sudo apt-get update
+          for pkg in libgl1 libglib2.0-0 libglib2.0-0t64; do
+            sudo apt-get install -y "$pkg" || true
+          done
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+
+      - name: Sync dependencies
+        run: uv sync --locked
+
+      - name: Check syntax
+        run: uv run python -m compileall -q aoyitu.py aoyitu_gui.py tests
+
+      - name: Run render self-check
+        run: uv run python tests/test_render.py
+
+      - name: Check trailing newline
+        run: |
+          fail=0
+          for f in $(git ls-files '*.py' '*.toml' '*.md' '*.json' '*.yml' '*.yaml' '*.txt' '.gitignore'); do
+            [ -s "$f" ] || continue
+            if [ -n "$(tail -c 1 "$f")" ]; then
+              echo "缺少末尾换行: $f"
+              fail=1
+            fi
+          done
+          exit $fail
